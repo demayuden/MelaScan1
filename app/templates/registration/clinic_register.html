@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Clinic | MelaScan</title>
+</head>
+<body>
+    <header>
+        <h1>MelaScan Clinic Registration</h1>
+        <p>Complete this form to request access for your clinic</p>
+    </header>
+
+    <nav>
+        <a href="/">Home</a>
+        <a href="/login">Login</a>
+    </nav>
+
+    <div class="container">
+        <form method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <h2>Clinic Information</h2>
+            <div>
+                <label>Clinic Name</label>
+                <input type="text" name="clinic_name" required>
+            </div>
+            
+            <div>
+                <label>Clinic Address</label>
+                <textarea name="clinic_address" required></textarea>
+            </div>
+            
+            <div>
+                <label>Contact Number</label>
+                <input type="tel" name="contact_number" required>
+            </div>
+            
+            <div>
+                <label>License Number</label>
+                <input type="text" name="license_number" required>
+            </div>
+            
+            <div>
+                <label>License Document</label>
+                <input type="file" name="license_document" accept=".pdf,.jpg,.png" required>
+            </div>
+
+            <h2>Admin Information</h2>
+            <div>
+                <label>Admin Name</label>
+                <input type="text" name="admin_name" required>
+            </div>
+            
+            <div>
+                <label>Admin Email</label>
+                <input type="email" name="admin_email" required>
+            </div>
+            
+            <div>
+                <label>Admin Phone</label>
+                <input type="tel" name="admin_phone" required>
+            </div>
+
+            <h2>Doctors</h2>
+            <div id="doctors-container">
+                <!-- Dynamic doctor fields will be added here -->
+            </div>
+            <button type="button" id="add-doctor">Add Doctor</button>
+
+            <button type="submit">Submit Application</button>
+        </form>
+    </div>
+
+    <script>
+        // JavaScript to handle dynamic doctor fields
+        document.getElementById('add-doctor').addEventListener('click', function() {
+            const container = document.getElementById('doctors-container');
+            const index = container.children.length;
+            
+            const doctorDiv = document.createElement('div');
+            doctorDiv.className = 'doctor-entry';
+            doctorDiv.innerHTML = `
+                <h3>Doctor #${index + 1}</h3>
+                <div>
+                    <label>Name</label>
+                    <input type="text" name="doctors-${index}-name" required>
+                </div>
+                <div>
+                    <label>Email</label>
+                    <input type="email" name="doctors-${index}-email" required>
+                </div>
+            `;
+            container.appendChild(doctorDiv);
+        });
+    </script>
+
+    <footer>
+        <p>&copy; 2024 MelaScan</p>
+    </footer>
+</body>
+</html>

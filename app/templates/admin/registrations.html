@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pending Registrations | MelaScan Admin</title>
+</head>
+<body>
+    <header>
+        <h1>Pending Clinic Registrations</h1>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flashes">
+                    {% for category, message in messages %}
+                        <p class="{{ category }}">{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+    </header>
+
+    <nav>
+        <a href="/admin">Admin Dashboard</a>
+    </nav>
+
+    <div class="container">
+        {% for application in applications %}
+        <div class="application">
+            <h3>{{ application.clinic_name }}</h3>
+            <p>Submitted: {{ application.submitted_at.strftime('%Y-%m-%d') }}</p>
+            <a href="/admin/process_registration/{{ application.id }}">Review Application</a>
+        </div>
+        {% else %}
+        <p>No pending applications</p>
+        {% endfor %}
+    </div>
+
+    <footer>
+        <p>&copy; 2024 MelaScan Admin</p>
+    </footer>
+</body>
+</html>

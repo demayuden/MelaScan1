@@ -1,46 +1,49 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
 import os
+from app.extensions import db, migrate, bcrypt
+from dotenv import load_dotenv
+from flask_wtf.csrf import CSRFProtect, generate_csrf  
 
+# Import blueprints
+from app.routes.home import home_bp
+from app.routes.auth import registration_bp
 
-# Import blueprints from other files
-from app.routes.home import home_bp  # Import home blueprint
-
-# Optionally, import other blueprints if required:
-# from app.routes.auth import auth_bp
-# from app.routes.clinic import clinic_bp
-# from app.routes.patient import patient_bp
-# from app.routes.image import image_bp
-# from app.routes.report import report_bp
-
-
-# Initialize extensions
-db = SQLAlchemy()
+# Load environment variables
+load_dotenv()
 
 def create_app():
     app = Flask(__name__, template_folder='templates')
     
-    print(f"Template Folder: {app.template_folder}")
-
-
-
-    # Load configuration from .env
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///D:/MelaScan1/instance/mela_scan.db'
-
-
-    # Register blueprints with the app
-    app.register_blueprint(home_bp)  # Home page route without a url_prefix
+    # Initialize CSRF protection
+    csrf = CSRFProtect(app)
     
-    # Register other blueprints with url_prefixes as needed
-    # app.register_blueprint(auth_bp, url_prefix='/auth')
-    # app.register_blueprint(clinic_bp, url_prefix='/clinic')
-    # app.register_blueprint(patient_bp, url_prefix='/patient')
-    # app.register_blueprint(image_bp, url_prefix='/image')
-    # app.register_blueprint(report_bp, url_prefix='/report')
+    # Configuration
+    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+    app.config['SQLALCHEMY_DATABASE_URI'] = r'sqlite:///D:\MelaScan1\instance\mela_scan.db'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    
+    # Upload folders
+    app.config['UPLOAD_FOLDERS'] = {
+        'registration': os.getenv('UPLOAD_FOLDER_REGISTRATION'),
+        'reports': os.getenv('UPLOAD_FOLDER_REPORTS')
+    }
+    
+    # Create upload directories
+    for folder in app.config['UPLOAD_FOLDERS'].values():
+        os.makedirs(folder, exist_ok=True)
 
     # Initialize extensions
     db.init_app(app)
-    migrate = Migrate(app, db)
+    migrate.init_app(app, db)
+    bcrypt.init_app(app)
+    
+    # Inject CSRF token into all templates
+    @app.context_processor
+    def inject_csrf_token():
+        return dict(csrf_token=generate_csrf)  # Now properly imported
+    
+    # Register blueprints
+    app.register_blueprint(home_bp)
+    app.register_blueprint(registration_bp, url_prefix='/registration')
 
     return app

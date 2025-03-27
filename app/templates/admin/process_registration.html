@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Process Registration | MelaScan Admin</title>
+</head>
+<body>
+    <header>
+        <h1>Review Clinic Registration</h1>
+    </header>
+
+    <nav>
+        <a href="/admin/registrations">Back to Registrations</a>
+    </nav>
+
+    <div class="container">
+        <h2>{{ application.clinic_name }}</h2>
+        <p><strong>Contact:</strong> {{ application.admin_email }} | {{ application.contact_number }}</p>
+        <p><strong>Address:</strong> {{ application.clinic_address }}</p>
+        <p><strong>License:</strong> {{ application.license_number }}</p>
+        
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" name="action" value="approve">Approve</button>
+            <button type="submit" name="action" value="reject">Reject</button>
+            <textarea name="rejection_reason" placeholder="Reason for rejection (if applicable)"></textarea>
+        </form>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 MelaScan Admin</p>
+    </footer>
+</body>
+</html>

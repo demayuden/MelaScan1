@@ -1,78 +1,97 @@
 from app import db
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
+import json
 
-# --- Users Table ---
-class User(db.Model):
+class User(db.Model):  
     __tablename__ = 'users'
-    user_id = db.Column(db.Integer, primary_key=True)
-    clinic_id = db.Column(db.Integer, db.ForeignKey('clinics.clinic_id'), nullable=True)
+    id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    password = db.Column(db.String(128), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
+    role = db.Column(db.String(20), nullable=False)  # 'global_admin', 'local_admin', 'doctor'
 
-# --- Doctors Table ---
-class Doctor(db.Model):
-    __tablename__ = 'doctors'
-    doctor_id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
-    clinic_id = db.Column(db.Integer, db.ForeignKey('clinics.clinic_id'), nullable=False)
+    clinic_relationships = db.relationship('UserClinicMap', backref='user')
+    processed_applications = db.relationship('ClinicRegistration', backref='processed_by_user')
 
-# --- Local Admins Table ---
-class LocalAdmin(db.Model):
-    __tablename__ = 'local_admins'
-    local_admin_id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
-    clinic_id = db.Column(db.Integer, db.ForeignKey('clinics.clinic_id'), nullable=False)
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+    
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
-# --- Global Admins Table ---
-class GlobalAdmin(db.Model):
-    __tablename__ = 'global_admins'
-    global_admin_id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
-
-# --- Clinics Table ---
 class Clinic(db.Model):
     __tablename__ = 'clinics'
-    clinic_id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), nullable=False)
+    address = db.Column(db.String(250), nullable=False)
+    contact_number = db.Column(db.String(20), nullable=False)
+    license_number = db.Column(db.String(50))
+    status = db.Column(db.String(20), default='pending')  # 'pending', 'approved', 'rejected'
+    
+    user_relationships = db.relationship('UserClinicMap', backref='clinic')
+    patient_relationships = db.relationship('PatientClinicMap', backref='clinic')
+
+class UserClinicMap(db.Model):
+    __tablename__ = 'user_clinic_map'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    clinic_id = db.Column(db.Integer, db.ForeignKey('clinics.id'), nullable=False)
+    role_at_clinic = db.Column(db.String(20))  # 'local_admin', 'doctor'
+
+class Patient(db.Model):
+    __tablename__ = 'patients'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), nullable=False)
+    contact_number = db.Column(db.String(20), nullable=False)
+    date_of_birth = db.Column(db.Date, nullable=False)
+    
+    clinic_relationships = db.relationship('PatientClinicMap', backref='patient')
+    images = db.relationship('Image', backref='patient')
+
+class PatientClinicMap(db.Model):
+    __tablename__ = 'patient_clinic_map'
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patients.id'), nullable=False)
+    clinic_id = db.Column(db.Integer, db.ForeignKey('clinics.id'), nullable=False)
+
+class Image(db.Model):
+    __tablename__ = 'images'
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patients.id'), nullable=False)
+    filename = db.Column(db.String(255), nullable=False)
+    file_path = db.Column(db.String(500), nullable=False)
+    upload_date = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Report(db.Model):
+    __tablename__ = 'reports'
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patients.id'), nullable=False)
+    image_id = db.Column(db.Integer, db.ForeignKey('images.id'), nullable=False)
+    prediction_result = db.Column(db.String(50), nullable=False)
+    generated_on = db.Column(db.DateTime, default=datetime.utcnow)
+
+class ClinicRegistration(db.Model):
+    __tablename__ = 'clinic_registrations'
+    id = db.Column(db.Integer, primary_key=True)
     clinic_name = db.Column(db.String(150), nullable=False)
     clinic_address = db.Column(db.String(250), nullable=False)
     contact_number = db.Column(db.String(20), nullable=False)
-
-    users = db.relationship('User', backref='clinic', lazy=True)
-
-# --- Global Admin Access Table ---
-class GlobalAdminAccess(db.Model):
-    __tablename__ = 'global_admin_access'
-    global_admin_id = db.Column(db.Integer, db.ForeignKey('global_admins.global_admin_id'), primary_key=True)
-    clinic_id = db.Column(db.Integer, db.ForeignKey('clinics.clinic_id'), primary_key=True)
-
-# --- Patients Table ---
-class Patient(db.Model):
-    __tablename__ = 'patients'
-    patient_id = db.Column(db.Integer, primary_key=True)
-    patient_name = db.Column(db.String(150), nullable=False)
-    patient_contact = db.Column(db.String(20), nullable=False)
-    data_of_birth = db.Column(db.Date, nullable=False)
-
-# --- Patient Access Control Table ---
-class PatientAccessControl(db.Model):
-    __tablename__ = 'patient_access_control'
-    patient_id = db.Column(db.Integer, db.ForeignKey('patients.patient_id'), primary_key=True)
-    clinic_id = db.Column(db.Integer, db.ForeignKey('clinics.clinic_id'), primary_key=True)
-
-# --- Images Table (For Storing Image Metadata) ---
-class Image(db.Model):
-    __tablename__ = 'images'
-    image_id = db.Column(db.Integer, primary_key=True)
-    patient_id = db.Column(db.Integer, db.ForeignKey('patients.patient_id'), nullable=False)
-    filename = db.Column(db.String(255), nullable=False)
-    file_path = db.Column(db.String(500), nullable=False)  # Local file storage
-    upload_date = db.Column(db.DateTime, default=datetime.utcnow)
-
-# --- Reports Table ---
-class Report(db.Model):
-    __tablename__ = 'reports'
-    report_id = db.Column(db.Integer, primary_key=True)
-    patient_id = db.Column(db.Integer, db.ForeignKey('patients.patient_id'), nullable=False)
-    image_id = db.Column(db.Integer, db.ForeignKey('images.image_id'), nullable=False)
-    prediction_result = db.Column(db.String(50), nullable=False)
-    generated_on = db.Column(db.DateTime, default=datetime.utcnow)
+    admin_name = db.Column(db.String(100), nullable=False)
+    admin_email = db.Column(db.String(120), nullable=False, unique=True)
+    admin_phone = db.Column(db.String(20))
+    license_number = db.Column(db.String(50), nullable=False)
+    license_document = db.Column(db.String(255), nullable=False)
+    doctor_count = db.Column(db.Integer, default=1)
+    doctor_names = db.Column(db.Text)  # JSON string
+    status = db.Column(db.String(20), default='pending')
+    submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
+    processed_at = db.Column(db.DateTime)
+    processed_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    rejection_reason = db.Column(db.Text)
+    
+    def get_doctor_list(self):
+        try:
+            return json.loads(self.doctor_names) if self.doctor_names else {}
+        except json.JSONDecodeError:
+            return {}

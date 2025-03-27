@@ -1,5 +1,8 @@
 # Ignore virtual environment directory
 new_venv/
+.env
+*.env
+
 
 # Ignore compiled Python files
 *.pyc
@@ -8,11 +11,10 @@ __pycache__/
 
 # Ignore instance folder (configuration, DB)
 instance/
+uploads/
 
 # Ignore migrations folder (optional)
 migrations/
 
-# Ignore environment files
-.env
 
 
