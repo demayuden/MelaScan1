@@ -14,7 +14,7 @@
     <nav>
         <a href="#about">About</a>
         <a href="{{ url_for('registration.clinic_registration') }}">Register</a>
-        <!-- Removed login link for now -->
+        <a href="{{ url_for('auth.login') }}">Login</a>
         <a href="#documentation">Documentation</a>
     </nav>
 
@@ -26,7 +26,7 @@
 
         <div class="buttons">
             <a href="{{ url_for('registration.clinic_registration') }}">Register Your Clinic</a>
-            <!-- Removed login button for now -->
+            <a href="{{ url_for('auth.login') }}">Login</a>
         </div>
 
         <section id="about">

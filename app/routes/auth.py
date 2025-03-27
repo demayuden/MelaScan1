@@ -1,15 +1,17 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, session
 from werkzeug.utils import secure_filename
+from werkzeug.security import check_password_hash
 import os
 import json
 from datetime import datetime
-from app.forms import ClinicRegistrationForm
+from app.forms import ClinicRegistrationForm, LoginForm
 from app.models import ClinicRegistration, User, Clinic, UserClinicMap
 from app.extensions import db
 from app.services.email_service import send_credentials_email
 from app.services.password_service import PasswordService
 
 registration_bp = Blueprint('registration', __name__)
+auth_bp = Blueprint('auth', __name__)
 
 # Simple admin check (replace with your preferred method)
 def is_admin():
@@ -162,3 +164,38 @@ def admin_view_registrations():
 def track_application(application_id):
     application = ClinicRegistration.query.get_or_404(application_id)
     return render_template('registration/track_application.html', application=application)
+
+
+
+## LOG IN ##
+@auth_bp.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        
+        if user and check_password_hash(user.password_hash, form.password.data):
+            session['user_id'] = user.id
+            session['user_role'] = user.role
+            session['username'] = user.username
+            
+            flash('Login successful!', 'success')
+            
+            # Redirect based on user role
+            if user.role == 'admin':
+                return redirect(url_for('admin.dashboard'))
+            elif user.role == 'local_admin':
+                return redirect(url_for('clinic.dashboard'))
+            else:
+                return redirect(url_for('doctor.dashboard'))
+        else:
+            flash('Invalid email or password', 'danger')
+    
+    return render_template('login.html', form=form)
+
+@auth_bp.route('/logout')
+def logout():
+    session.clear()
+    flash('You have been logged out.', 'info')
+    return redirect(url_for('home.home'))

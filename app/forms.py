@@ -1,8 +1,9 @@
 #app/forms.py
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, FileField, SubmitField, FieldList, FormField
+from wtforms import StringField, TextAreaField, FileField, SubmitField, FieldList, FormField, PasswordField 
 from wtforms.validators import DataRequired, Email, Length, ValidationError
 from app.models import Clinic, User
+from wtforms.validators import DataRequired, Email
 
 class DoctorForm(FlaskForm):
     name = StringField('Doctor Name', validators=[DataRequired()])
@@ -28,3 +29,8 @@ class ClinicRegistrationForm(FlaskForm):
     def validate_admin_email(self, field):
         if User.query.filter_by(email=field.data).first():
             raise ValidationError('Email already registered.')
+        
+
+class LoginForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Password', validators=[DataRequired()])

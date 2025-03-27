@@ -7,6 +7,7 @@ from flask_wtf.csrf import CSRFProtect, generate_csrf
 # Import blueprints
 from app.routes.home import home_bp
 from app.routes.auth import registration_bp
+from app.routes.auth import auth_bp
 
 # Load environment variables
 load_dotenv()
@@ -45,5 +46,7 @@ def create_app():
     # Register blueprints
     app.register_blueprint(home_bp)
     app.register_blueprint(registration_bp, url_prefix='/registration')
+    app.register_blueprint(auth_bp, url_prefix='/auth')
+
 
     return app
